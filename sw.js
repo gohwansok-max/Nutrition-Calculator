@@ -1,6 +1,6 @@
 // QA+ 영양성분표시 계산기 — 서비스워커
 // 버전을 올리면(예: v2) 이전 캐시가 자동 정리되고 새 파일로 교체됩니다.
-const CACHE_VERSION = 'qaplus-nutri-calc-v1';
+const CACHE_VERSION = 'qaplus-nutri-calc-v2';
 const APP_SHELL = [
   './',
   './index.html',
