@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영양성분표시 계산기 | QA+</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#173B4A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="영양표시계산기">
+<link rel="icon" type="image/x-icon" href="./icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{
+  --ink:#173B4A;
+  --ink-soft:#3E5B68;
+  --paper:#F6F7F5;
+  --panel:#FFFFFF;
+  --line:#D8DFDD;
+  --line-strong:#173B4A;
+  --teal:#0E6E63;
+  --teal-dark:#0A4F47;
+  --amber:#B4560F;
+  --amber-bg:#FBEEE1;
+  --danger:#B0301C;
+  --danger-bg:#FBECE8;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.55;
+  padding-bottom:60px;
+}
+a{color:var(--teal);}
+
+/* ---------- 헤더 ---------- */
+header.app-header{
+  background:var(--ink);
+  color:#fff;
+  padding:22px 20px 20px;
+}
+.header-inner{
+  max-width:920px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.qa-logo{
+  flex-shrink:0;
+  width:52px;height:52px;
+  border-radius:12px;
+  background:linear-gradient(155deg,var(--teal) 0%, #0A4F47 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;
+  font-size:19px;
+  letter-spacing:-0.5px;
+  color:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+.header-text h1{
+  margin:0;
+  font-size:19px;
+  font-weight:700;
+  letter-spacing:-0.3px;
+}
+.header-text p{
+  margin:3px 0 0;
+  font-size:12.5px;
+  color:#B9CBCF;
+}
+.btn-install{
+  margin-left:auto;
+  flex-shrink:0;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.4);
+  color:#fff;
+  border-radius:7px;
+  padding:8px 12px;
+  font-size:12.5px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.btn-install:hover{background:rgba(255,255,255,.24);}
+@media (max-width:520px){
+  .header-inner{flex-wrap:wrap;}
+  .btn-install{margin-left:66px;}
+}
+
+.container{max-width:920px;margin:0 auto;padding:22px 16px 0;}
+
+/* ---------- 안내 배너 ---------- */
+.notice{
+  background:var(--amber-bg);
+  border:1px solid #E8CBA9;
+  color:#7A3E10;
+  font-size:12.5px;
+  padding:10px 14px;
+  border-radius:8px;
+  margin-bottom:20px;
+}
+.notice b{color:#5E2F0C;}
+
+/* ---------- 카드 ---------- */
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:20px;
+  margin-bottom:16px;
+}
+.card h2{
+  font-size:15px;
+  margin:0 0 14px;
+  font-weight:700;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.card h2 .n{
+  width:22px;height:22px;
+  border-radius:50%;
+  background:var(--teal);
+  color:#fff;
+  font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.card .sub{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin:-8px 0 14px;
+}
+
+/* ---------- 폼 ---------- */
+.field-row{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:10px 12px;
+  margin-bottom:12px;
+}
+@media (max-width:640px){
+  .field-row{grid-template-columns:repeat(2,1fr);}
+}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{
+  font-size:12px;
+  color:var(--ink-soft);
+  font-weight:600;
+}
+.field .unit-tag{
+  font-weight:400;
+  color:#8CA0A8;
+}
+.field input, .field select{
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 9px;
+  font-size:14px;
+  font-family:inherit;
+  color:var(--ink);
+  background:#fff;
+}
+.field input:focus, .field select:focus{
+  outline:none;
+  border-color:var(--teal);
+  box-shadow:0 0 0 3px rgba(14,110,99,.12);
+}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (max-width:640px){.two-col{grid-template-columns:1fr;}}
+
+.toggle-row{
+  display:flex;align-items:center;gap:8px;
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin-top:4px;
+}
+.toggle-row input{width:15px;height:15px;}
+
+/* ---------- 표시단위 리스트 ---------- */
+.serving-list{display:flex;flex-direction:column;gap:10px;}
+.serving-item{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px;
+  background:#FBFCFB;
+}
+.serving-item .field-row{grid-template-columns:2fr 1fr 1fr auto;margin-bottom:0;}
+.serving-item .field-row.srv-main-row{grid-template-columns:1.4fr 1fr 1fr auto;}
+.serving-item .field-row.srv-unitamt-row{grid-template-columns:1.4fr 1fr 1fr auto;margin-top:8px;}
+.serving-item .field-row.srv-name-row{grid-template-columns:1fr;margin-top:8px;}
+@media (max-width:640px){
+  .serving-item .field-row{grid-template-columns:1fr 1fr;}
+  .serving-item .field-row.srv-main-row{grid-template-columns:1fr 1fr;}
+  .serving-item .field-row.srv-unitamt-row{grid-template-columns:1fr 1fr;}
+}
+.btn-remove{
+  align-self:flex-end;
+  background:var(--danger-bg);
+  color:var(--danger);
+  border:1px solid #E7C4BC;
+  border-radius:7px;
+  padding:8px 10px;
+  font-size:12.5px;
+  cursor:pointer;
+  height:37px;
+}
+.btn-add{
+  margin-top:10px;
+  background:#fff;
+  border:1px dashed #9FB3AE;
+  color:var(--teal-dark);
+  border-radius:8px;
+  padding:9px;
+  width:100%;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-add:hover{background:#F1F7F5;}
+
+/* ---------- 버튼 ---------- */
+.btn-primary{
+  background:var(--teal);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:13px 20px;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  width:100%;
+}
+.btn-primary:hover{background:var(--teal-dark);}
+.btn-line{
+  background:#fff;
+  border:1px solid var(--line);
+  color:var(--ink);
+  border-radius:7px;
+  padding:8px 12px;
+  font-size:12.5px;
+  cursor:pointer;
+}
+.btn-line:hover{border-color:var(--teal);color:var(--teal-dark);}
+
+/* ---------- 접기 ---------- */
+details.adv{
+  margin-top:6px;
+  font-size:13px;
+}
+details.adv summary{
+  cursor:pointer;
+  color:var(--teal-dark);
+  font-weight:600;
+  list-style:none;
+}
+details.adv summary::-webkit-details-marker{display:none;}
+details.adv summary:before{content:"▸ ";}
+details.adv[open] summary:before{content:"▾ ";}
+details.adv .adv-body{margin-top:10px;}
+
+/* ---------- 결과 ---------- */
+#results{display:flex;flex-direction:column;gap:22px;}
+.result-block{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:18px;
+}
+.result-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:14px;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.result-head h3{
+  margin:0;
+  font-size:15px;
+  color:var(--ink);
+}
+.result-head .actions{display:flex;gap:6px;}
+
+.result-flex{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+
+/* 공식 표시서식 박스 (도3 스타일) */
+.label-box{
+  width:280px;
+  border:3px solid #111;
+  padding:0;
+  font-family:'Pretendard','Malgun Gothic',sans-serif;
+  color:#111;
+  background:#fff;
+  flex-shrink:0;
+}
+.label-box .lb-title{
+  font-size:20px;
+  font-weight:800;
+  padding:8px 10px 4px;
+  border-bottom:8px solid #111;
+}
+.label-box .lb-serving{
+  padding:6px 10px;
+  font-size:13px;
+  font-weight:700;
+  border-bottom:8px solid #111;
+}
+.label-box .lb-cal{
+  padding:6px 10px 8px;
+  border-bottom:8px solid #111;
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.label-box .lb-cal .lb-cal-label{font-size:13px;font-weight:700;}
+.label-box .lb-cal .lb-cal-num{font-size:26px;font-weight:800;}
+.label-box .lb-dv-head{
+  padding:3px 10px;
+  font-size:11px;
+  text-align:right;
+  font-weight:700;
+  border-bottom:1px solid #111;
+}
+.label-box .lb-row{
+  padding:4px 10px;
+  font-size:12.5px;
+  border-bottom:1px solid #999;
+  display:flex;justify-content:space-between;
+}
+.label-box .lb-row.sub{padding-left:20px;font-size:11.5px;color:#333;}
+.label-box .lb-row b{font-weight:700;}
+.label-box .lb-row .lb-dv{font-weight:700;}
+.label-box .lb-row.thick{border-bottom:4px solid #111;}
+.label-box .lb-foot{
+  padding:6px 10px 9px;
+  font-size:9.5px;
+  color:#333;
+}
+
+.calc-table{flex:1;min-width:260px;}
+.calc-table table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.calc-table th, .calc-table td{
+  border:1px solid var(--line);
+  padding:6px 7px;
+  text-align:right;
+}
+.calc-table th{background:#F1F4F3;font-weight:700;text-align:center;color:var(--ink-soft);}
+.calc-table td:first-child, .calc-table th:first-child{text-align:left;}
+.calc-table .flag{
+  color:var(--amber);
+  font-size:10.5px;
+  display:block;
+}
+
+.hln-box{
+  margin-top:14px;
+  border:1px solid #E7C4BC;
+  background:var(--danger-bg);
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:12.5px;
+  color:#6F1F10;
+}
+.hln-box.ok{
+  border-color:#B9D8C7;
+  background:#EDF7F1;
+  color:#1B5E3A;
+}
+.hln-box b{display:block;margin-bottom:3px;}
+
+.copy-textarea{
+  width:100%;
+  min-height:120px;
+  margin-top:10px;
+  font-family:var(--mono);
+  font-size:12px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:10px;
+  color:var(--ink-soft);
+  display:none;
+  white-space:pre;
+}
+
+footer{
+  max-width:920px;margin:24px auto 0;padding:0 16px;
+  font-size:11.5px;color:#8CA0A8;text-align:center;
+}
+
+/* ---------- 인쇄 ---------- */
+@media print{
+  header.app-header, .card, .notice, footer, .btn-primary, .result-head .actions{display:none !important;}
+  body{background:#fff;}
+  .container{padding:0;max-width:none;}
+  #results{gap:0;}
+  .result-block{border:none;page-break-after:always;padding:0;}
+  .result-flex{display:block;}
+  .label-box{margin:0 auto;}
+  .calc-table{margin-top:16px;}
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="qa-logo">QA+</div>
+    <div class="header-text">
+      <h1>영양성분표시 계산기</h1>
+      <p>성적서 분석치 입력 → 식품등의 표시기준 반올림 규칙 자동 적용 → 표시서식 즉시 생성</p>
+    </div>
+    <button id="installBtn" class="btn-install" type="button" style="display:none;">앱 설치</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="notice">
+    <b>사용 전 확인.</b> 본 계산기는 「식품등의 표시기준」 별지 영양성분별 세부표시방법 및 [표3] 1일 영양성분 기준치를 근거로 반올림·환산을 자동화한 보조 도구입니다.
+    법정 표시 의무사항(알레르기, 고열량저영양 표시 등)의 최종 적용 여부와 표시값은 반드시 담당자가 검토 후 확정하시기 바랍니다.
+  </div>
+
+  <!-- 1. 성적서 분석치 -->
+  <div class="card">
+    <h2><span class="n">1</span>성적서 분석치 입력</h2>
+    <div class="sub">시험성적서에 기재된 값을 <b>기준량 100g(또는 100ml)당</b> 수치로 입력하세요.</div>
+
+    <div class="field-row" style="grid-template-columns:1fr 1fr;">
+      <div class="field">
+        <label>제품명</label>
+        <input type="text" id="productName" placeholder="예 : 큐에이플러스">
+      </div>
+      <div class="field">
+        <label>분석 기준</label>
+        <select id="baseUnit">
+          <option value="g">100g 기준</option>
+          <option value="ml">100ml 기준</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>나트륨 <span class="unit-tag">mg</span></label><input type="number" id="in_sodium" step="any" placeholder="0"></div>
+      <div class="field"><label>탄수화물 <span class="unit-tag">g</span></label><input type="number" id="in_carb" step="any" placeholder="0"></div>
+      <div class="field"><label>　당류 <span class="unit-tag">g</span></label><input type="number" id="in_sugar" step="any" placeholder="0"></div>
+      <div class="field"><label>지방 <span class="unit-tag">g</span></label><input type="number" id="in_fat" step="any" placeholder="0"></div>
+      <div class="field"><label>　트랜스지방 <span class="unit-tag">g</span></label><input type="number" id="in_trans" step="any" placeholder="0"></div>
+      <div class="field"><label>　포화지방 <span class="unit-tag">g</span></label><input type="number" id="in_satfat" step="any" placeholder="0"></div>
+      <div class="field"><label>콜레스테롤 <span class="unit-tag">mg</span></label><input type="number" id="in_chol" step="any" placeholder="0"></div>
+      <div class="field"><label>단백질 <span class="unit-tag">g</span></label><input type="number" id="in_protein" step="any" placeholder="0"></div>
+    </div>
+
+    <div class="toggle-row">
+      <input type="checkbox" id="calOverrideChk">
+      <label for="calOverrideChk">열량을 성적서 값(100g/ml당 kcal)으로 직접 입력 — 미체크 시 탄수화물4+지방9+단백질4로 자동 계산</label>
+    </div>
+    <div class="field-row" id="calOverrideRow" style="display:none;margin-top:10px;">
+      <div class="field"><label>열량 <span class="unit-tag">kcal</span></label><input type="number" id="in_cal" step="any" placeholder="0"></div>
+    </div>
+  </div>
+
+  <!-- 2. 표시 단위 -->
+  <div class="card">
+    <h2><span class="n">2</span>표시 단위 (라벨에 낼 용량)</h2>
+    <div class="sub">총내용량, 1회 제공량, 낱개 포장량 등 라벨에 실제로 표시할 용량을 원하는 만큼 추가하세요.</div>
+
+    <div class="serving-list" id="servingList"></div>
+    <button class="btn-add" id="addServingBtn" type="button">+ 표시 단위 추가</button>
+  </div>
+
+  <!-- 3. 고열량저영양 (선택) -->
+  <div class="card">
+    <details class="adv" id="hlnDetails">
+      <summary>고열량·저영양식품 자동 판정 (선택, 어린이 기호식품 대상)</summary>
+      <div class="adv-body">
+        <div class="field-row" style="grid-template-columns:1fr 1fr;">
+          <div class="field">
+            <label>식품유형 분류</label>
+            <select id="hlnType">
+              <option value="snack">간식용 (과자·캔디·빙과·음료 등)</option>
+              <option value="meal">식사대용 (면류·햄버거·샌드위치 등)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>판정 기준이 되는 표시 단위</label>
+            <select id="hlnServingRef"></select>
+          </div>
+        </div>
+        <div class="sub" style="margin:8px 0 0;">1회 섭취참고량이 30g 미만인 캔디류·초콜릿류·팝콘 등은 고시에 따라 30g으로 환산 적용해야 하나, 본 계산기는 위에서 선택한 표시 단위의 실제 값으로 판정합니다. 최종 적용은 담당자가 확인하세요.</div>
+      </div>
+    </details>
+  </div>
+
+  <button class="btn-primary" id="calcBtn" type="button">표시사항 계산하기</button>
+
+  <div id="results" style="margin-top:22px;"></div>
+
+</div>
+
+<footer>
+  QA+ 영양성분표시 계산기 · 오프라인 단일 HTML 도구 · 계산 근거: 식품등의 표시기준(식약처 고시) 영양성분별 세부표시방법 · [표3] 1일 영양성분 기준치<br>
+  본 도구의 산출 결과는 참고용이며, 법적 책임은 표시 확정권자에게 있습니다.
+</footer>
+
+<script>
+/* ===================== 상수 ===================== */
+// [표3] 1일 영양성분 기준치
+const REF = {
+  sodium: 2000, carb: 324, sugar: 100, fiber: 25,
+  protein: 55, fat: 54, satfat: 15, chol: 300
+};
+
+/* ===================== 반올림 로직 ===================== */
+// 반올림(사사오입 아님, 표준 반올림) — 지정 step 단위로
+function roundToStep(val, step){
+  // 부동소수점 이진표현 오차(예: 1.15/0.1 → 11.499999999999998) 보정.
+  // 소수 계산은 항상 이 함수를 거치며, 정수 스케일링 후 반올림해 오차를 제거한다.
+  const scale = 1e6;
+  const v = Math.round(val * scale);
+  const s = Math.round(step * scale);
+  const q = Math.round(v / s); // 여기서도 v/s는 정수쌍 나눗셈이라 근본 오차가 사라짐
+  return Math.round(q * s) / scale;
+}
+function fmt(n, maxDecimals){
+  // 소수 표시 정리 (0.1 단위 등에서 불필요한 0 제거하지 않고, 지정 소수자리까지 고정)
+  return Number(n.toFixed(maxDecimals)).toString();
+}
+
+// 각 함수는 { raw, val, text, dvBasis } 반환
+// raw: 계산치(원값) / val: 반올림된 숫자(표시값 또는 근사표기의 기준수) / text: 라벨에 실제로 인쇄할 문자열 / dvBasis: %DV 산출에 쓸 숫자
+
+function calcEnergy(raw){
+  if (raw < 2.5) return {raw, val:0, text:'0', dvBasis:0};
+  const v = roundToStep(raw, 5);
+  return {raw, val:v, text:String(v), dvBasis:v};
+}
+function calcSodium(raw, approx){
+  if (raw < 5) return {raw, val:0, text:'0', dvBasis:0};
+  const step = raw <= 120 ? 5 : 10;
+  const v = roundToStep(raw, step);
+  return {raw, val:v, text:String(v), dvBasis:v};
+}
+function calcCarbLike(raw, approx){ // 탄수화물, 당류, 단백질 공통 (1g 단위)
+  if (raw < 0.5) return {raw, val:0, text:'0', dvBasis:0};
+  if (raw < 1){
+    if (approx) return {raw, val:1, text:'1 미만', dvBasis:raw};
+    const v = roundToStep(raw, 1);
+    return {raw, val:v, text:String(v), dvBasis:v};
+  }
+  const v = roundToStep(raw, 1);
+  return {raw, val:v, text:String(v), dvBasis:v};
+}
+function calcFatLike(raw, approx){ // 지방, 포화지방 공통
+  if (raw < 0.5) return {raw, val:0, text:'0', dvBasis:0};
+  if (raw <= 5){
+    const v = roundToStep(raw, 0.1);
+    return {raw, val:v, text:fmt(v,1), dvBasis:v};
+  }
+  const v = roundToStep(raw, 1);
+  return {raw, val:v, text:String(v), dvBasis:v};
+}
+function calcTrans(raw, approx){
+  if (raw < 0.2) return {raw, val:0, text:'0', dvBasis:0};
+  if (raw < 0.5){
+    if (approx) return {raw, val:0.5, text:'0.5 미만', dvBasis:raw};
+    const v = roundToStep(raw, 0.1);
+    return {raw, val:v, text:fmt(v,1), dvBasis:v};
+  }
+  if (raw <= 5){
+    const v = roundToStep(raw, 0.1);
+    return {raw, val:v, text:fmt(v,1), dvBasis:v};
+  }
+  const v = roundToStep(raw, 1);
+  return {raw, val:v, text:String(v), dvBasis:v};
+}
+function calcChol(raw, approx){
+  if (raw < 2) return {raw, val:0, text:'0', dvBasis:0};
+  if (raw < 5){
+    if (approx) return {raw, val:5, text:'5 미만', dvBasis:raw};
+    const v = roundToStep(raw, 5);
+    return {raw, val:v, text:String(v), dvBasis:v};
+  }
+  const v = roundToStep(raw, 5);
+  return {raw, val:v, text:String(v), dvBasis:v};
+}
+function pctDV(basis, ref){
+  return Math.round((basis / ref) * 100);
+}
+
+/* ===================== 표시 단위 UI (품목제조보고서 '내용량' 작성방법 ①②③ 반영) ===================== */
+let servingSeq = 0;
+function addServingRow(preset){
+  servingSeq++;
+  const id = 'srv_' + servingSeq;
+  const wrap = document.createElement('div');
+  wrap.className = 'serving-item';
+  wrap.dataset.id = id;
+  wrap.innerHTML = `
+    <div class="field-row srv-main-row">
+      <div class="field"><label>내용량 작성방법</label>
+        <select class="srv-mode">
+          <option value="total">① 총 내용량당</option>
+          <option value="per100">② 100(g 또는 mL)당</option>
+          <option value="perUnit">③ 단위 내용량당</option>
+        </select>
+      </div>
+      <div class="field"><label>총 내용량</label><input type="number" class="srv-total" step="any" placeholder="0"></div>
+      <div class="field"><label>단위</label>
+        <select class="srv-unit"><option value="g">g</option><option value="ml">ml</option></select>
+      </div>
+      <button type="button" class="btn-remove" onclick="removeServing('${id}')">삭제</button>
+    </div>
+    <div class="field-row srv-unitamt-row" style="display:none;">
+      <div class="field"><label>단위 내용량(1개)</label><input type="number" class="srv-unitamt" step="any" placeholder="0"></div>
+      <div class="field"><label>항목명 (선택)</label><input type="text" class="srv-name" placeholder="예: 낱개포장"></div>
+      <div class="field"></div>
+      <div></div>
+    </div>
+    <div class="field-row srv-name-row">
+      <div class="field"><label>항목명 (선택, 비우면 자동 표기)</label><input type="text" class="srv-name" placeholder="예: 완제품 / 1회 제공량"></div>
+    </div>
+  `;
+  document.getElementById('servingList').appendChild(wrap);
+
+  const modeSel = wrap.querySelector('.srv-mode');
+  const unitAmtRow = wrap.querySelector('.srv-unitamt-row');
+  const nameRow = wrap.querySelector('.srv-name-row');
+  function syncMode(){
+    const isUnit = modeSel.value === 'perUnit';
+    unitAmtRow.style.display = isUnit ? 'grid' : 'none';
+    nameRow.style.display = isUnit ? 'none' : 'grid';
+  }
+  modeSel.addEventListener('change', ()=>{ syncMode(); refreshHlnServingOptions(); });
+  syncMode();
+
+  if (preset){
+    if (preset.mode) modeSel.value = preset.mode;
+    wrap.querySelector('.srv-total').value = preset.amount;
+    wrap.querySelector('.srv-unit').value = preset.unit;
+    if (preset.name) wrap.querySelectorAll('.srv-name').forEach(el=>el.value=preset.name);
+    syncMode();
+  }
+  refreshHlnServingOptions();
+}
+function removeServing(id){
+  const el = document.querySelector('.serving-item[data-id="' + id + '"]');
+  if (el) el.remove();
+  refreshHlnServingOptions();
+}
+function servingLabel(it){
+  const mode = it.querySelector('.srv-mode').value;
+  const total = it.querySelector('.srv-total').value || '0';
+  const unit = it.querySelector('.srv-unit').value;
+  const nameEl = it.querySelector(mode === 'perUnit' ? '.srv-unitamt-row .srv-name' : '.srv-name-row .srv-name');
+  const custom = nameEl ? nameEl.value.trim() : '';
+  if (custom) return custom;
+  if (mode === 'total') return `총 내용량(${total}${unit})`;
+  if (mode === 'per100') return `100${unit}당`;
+  const unitAmt = it.querySelector('.srv-unitamt').value || '0';
+  return `단위 내용량(1개, ${unitAmt}${unit})`;
+}
+function refreshHlnServingOptions(){
+  const sel = document.getElementById('hlnServingRef');
+  const items = document.querySelectorAll('.serving-item');
+  sel.innerHTML = '';
+  items.forEach(it=>{
+    const opt = document.createElement('option');
+    opt.value = it.dataset.id;
+    opt.textContent = servingLabel(it);
+    sel.appendChild(opt);
+  });
+}
+document.getElementById('addServingBtn').addEventListener('click', ()=>addServingRow({mode:'total', amount:'', unit:'g'}));
+document.getElementById('servingList').addEventListener('input', (e)=>{
+  if (e.target.classList.contains('srv-name') || e.target.classList.contains('srv-total') || e.target.classList.contains('srv-unitamt')) refreshHlnServingOptions();
+});
+document.getElementById('calOverrideChk').addEventListener('change', (e)=>{
+  document.getElementById('calOverrideRow').style.display = e.target.checked ? 'flex' : 'none';
+});
+// 초기 기본값 2개
+addServingRow({mode:'total', amount:'', unit:'g'});
+addServingRow({mode:'per100', amount:'', unit:'g'});
+
+/* ===================== 계산 실행 ===================== */
+function getNum(id){
+  const v = document.getElementById(id).value;
+  return v === '' ? 0 : parseFloat(v);
+}
+
+document.getElementById('calcBtn').addEventListener('click', runCalc);
+
+function runCalc(){
+  const productName = document.getElementById('productName').value.trim() || '제품명 미입력';
+  const analysis = {
+    sodium: getNum('in_sodium'),
+    carb: getNum('in_carb'),
+    sugar: getNum('in_sugar'),
+    fat: getNum('in_fat'),
+    trans: getNum('in_trans'),
+    satfat: getNum('in_satfat'),
+    chol: getNum('in_chol'),
+    protein: getNum('in_protein')
+  };
+  const calOverride = document.getElementById('calOverrideChk').checked;
+  const calBase100 = calOverride ? getNum('in_cal') : null;
+
+  const servingEls = document.querySelectorAll('.serving-item');
+  const servings = [];
+  servingEls.forEach(el=>{
+    const mode = el.querySelector('.srv-mode').value;
+    const total = parseFloat(el.querySelector('.srv-total').value);
+    const unit = el.querySelector('.srv-unit').value;
+    const unitAmt = mode === 'perUnit' ? parseFloat(el.querySelector('.srv-unitamt').value) : null;
+    const name = servingLabel(el);
+    if (!(total > 0)) return;
+    if (mode === 'perUnit' && !(unitAmt > 0)) return;
+    // 계산 기준량(표시기준량): ① 총내용량 / ② 100 / ③ 단위내용량
+    const basisAmount = mode === 'total' ? total : (mode === 'per100' ? 100 : unitAmt);
+    servings.push({id:el.dataset.id, name, mode, total, unit, unitAmt, basisAmount});
+  });
+
+  if (servings.length === 0){
+    alert('표시 단위를 1개 이상 입력하세요 (총 내용량 값이 필요하며, ③을 선택한 경우 단위 내용량도 필요합니다).');
+    return;
+  }
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '';
+
+  const blocks = servings.map(srv => buildBlock(productName, analysis, calOverride, calBase100, srv));
+
+  blocks.forEach(b => resultsEl.appendChild(b.node));
+
+  // 고열량저영양 판정
+  renderHln(blocks);
+
+  resultsEl.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function buildBlock(productName, analysis, calOverride, calBase100, srv){
+  const ratio = srv.basisAmount / 100; // 100g/ml 기준 분석치를 표시기준량(①총내용량/②100/③단위내용량)으로 환산하는 배율
+  const approx = true; // "미만" 표기 자동 사용
+
+  const rawSodium = analysis.sodium * ratio;
+  const rawCarb   = analysis.carb   * ratio;
+  const rawSugar  = analysis.sugar  * ratio;
+  const rawFat    = analysis.fat    * ratio;
+  const rawTrans  = analysis.trans  * ratio;
+  const rawSatfat = analysis.satfat * ratio;
+  const rawChol   = analysis.chol   * ratio;
+  const rawProtein= analysis.protein* ratio;
+
+  const sodium  = calcSodium(rawSodium, approx);
+  const carb    = calcCarbLike(rawCarb, approx);
+  const sugar   = calcCarbLike(rawSugar, approx);
+  const fat     = calcFatLike(rawFat, approx);
+  const trans   = calcTrans(rawTrans, approx);
+  const satfat  = calcFatLike(rawSatfat, approx);
+  const chol    = calcChol(rawChol, approx);
+  const protein = calcCarbLike(rawProtein, approx);
+
+  let rawEnergy;
+  if (calOverride){
+    rawEnergy = calBase100 * ratio;
+  } else {
+    rawEnergy = rawCarb*4 + rawFat*9 + rawProtein*4;
+  }
+  const energy = calcEnergy(rawEnergy);
+
+  const dv = {
+    sodium: pctDV(sodium.dvBasis, REF.sodium),
+    carb: pctDV(carb.dvBasis, REF.carb),
+    sugar: pctDV(sugar.dvBasis, REF.sugar),
+    fat: pctDV(fat.dvBasis, REF.fat),
+    satfat: pctDV(satfat.dvBasis, REF.satfat),
+    chol: pctDV(chol.dvBasis, REF.chol),
+    protein: pctDV(protein.dvBasis, REF.protein)
+  };
+
+  const unitLabel = srv.unit;
+
+  // ---- 내용량 작성방법(품목제조보고서 가이드 ①②③)에 따른 헤더 문구 ----
+  let servingHeader;
+  if (srv.mode === 'total'){
+    servingHeader = `총 내용량 ${srv.total}${unitLabel}, ${energy.text}kcal`;
+  } else if (srv.mode === 'per100'){
+    servingHeader = `총 내용량 ${srv.total}${unitLabel}<br><span style="font-weight:400;font-size:11.5px;">100${unitLabel}당 ${energy.text}kcal</span>`;
+  } else {
+    servingHeader = `총 내용량 ${srv.total}${unitLabel}<br><span style="font-weight:400;font-size:11.5px;">단위 내용량 1개 ${srv.unitAmt}${unitLabel}, ${energy.text}kcal(1개 기준)</span>`;
+  }
+
+  // ---- 공식 표시서식 박스 ----
+  const labelHtml = `
+    <div class="label-box">
+      <div class="lb-title">영양정보</div>
+      <div class="lb-serving">${servingHeader}</div>
+      <div class="lb-dv-head">1일 영양성분 기준치에 대한 비율</div>
+      <div class="lb-row thick"><span><b>나트륨</b> ${sodium.text}mg</span><span class="lb-dv">${dv.sodium}%</span></div>
+      <div class="lb-row"><span><b>탄수화물</b> ${carb.text}g</span><span class="lb-dv">${dv.carb}%</span></div>
+      <div class="lb-row sub"><span>당류 ${sugar.text}g</span><span class="lb-dv">${dv.sugar}%</span></div>
+      <div class="lb-row"><span><b>지방</b> ${fat.text}g</span><span class="lb-dv">${dv.fat}%</span></div>
+      <div class="lb-row sub"><span>트랜스지방 ${trans.text}g</span><span></span></div>
+      <div class="lb-row sub"><span>포화지방 ${satfat.text}g</span><span class="lb-dv">${dv.satfat}%</span></div>
+      <div class="lb-row"><span><b>콜레스테롤</b> ${chol.text}mg</span><span class="lb-dv">${dv.chol}%</span></div>
+      <div class="lb-row thick"><span><b>단백질</b> ${protein.text}g</span><span class="lb-dv">${dv.protein}%</span></div>
+      <div class="lb-foot">1일 영양성분 기준치에 대한 비율(%)은 2,000kcal 기준이므로 개인의 필요 열량에 따라 다를 수 있습니다.</div>
+    </div>
+  `;
+
+  // ---- 계산 근거 표 ----
+  function calcRow(name, raw, unit, res){
+    const flag = res.text.includes('미만') ? '<span class="flag">법정 근사표기 적용</span>' : (res.val===0 && raw>0 ? '<span class="flag">0 표시 규정 적용</span>' : '');
+    return `<tr><td>${name}</td><td>${raw.toFixed(2)}${unit}</td><td>${res.text}${unit}${flag}</td></tr>`;
+  }
+  const tableHtml = `
+    <div class="calc-table">
+      <table>
+        <thead><tr><th>영양성분</th><th>계산치(반올림 전)</th><th>표시값(반올림 후)</th></tr></thead>
+        <tbody>
+          <tr><td>열량</td><td>${rawEnergy.toFixed(1)}kcal</td><td>${energy.text}kcal</td></tr>
+          ${calcRow('나트륨', rawSodium, 'mg', sodium)}
+          ${calcRow('탄수화물', rawCarb, 'g', carb)}
+          ${calcRow('　당류', rawSugar, 'g', sugar)}
+          ${calcRow('지방', rawFat, 'g', fat)}
+          ${calcRow('　트랜스지방', rawTrans, 'g', trans)}
+          ${calcRow('　포화지방', rawSatfat, 'g', satfat)}
+          ${calcRow('콜레스테롤', rawChol, 'mg', chol)}
+          ${calcRow('단백질', rawProtein, 'g', protein)}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const node = document.createElement('div');
+  node.className = 'result-block';
+  node.innerHTML = `
+    <div class="result-head">
+      <h3>${productName} — ${srv.name}</h3>
+      <div class="actions">
+        <button class="btn-line" type="button" data-action="print">인쇄/PDF</button>
+        <button class="btn-line" type="button" data-action="copy">텍스트 복사</button>
+      </div>
+    </div>
+    <div class="result-flex">
+      ${labelHtml}
+      ${tableHtml}
+    </div>
+    <textarea class="copy-textarea" readonly></textarea>
+  `;
+
+  const copyText =
+`[${productName}] ${srv.name}
+${servingHeader.replace('<br>', ' / ').replace(/<[^>]+>/g,'')}
+나트륨 ${sodium.text}mg (${dv.sodium}%)
+탄수화물 ${carb.text}g (${dv.carb}%)
+  당류 ${sugar.text}g (${dv.sugar}%)
+지방 ${fat.text}g (${dv.fat}%)
+  트랜스지방 ${trans.text}g
+  포화지방 ${satfat.text}g (${dv.satfat}%)
+콜레스테롤 ${chol.text}mg (${dv.chol}%)
+단백질 ${protein.text}g (${dv.protein}%)
+* 1일 영양성분 기준치에 대한 비율(%)은 2,000kcal 기준`;
+
+  node.querySelector('[data-action="print"]').addEventListener('click', ()=>window.print());
+  node.querySelector('[data-action="copy"]').addEventListener('click', (e)=>{
+    const ta = node.querySelector('.copy-textarea');
+    ta.value = copyText;
+    ta.style.display = 'block';
+    ta.select();
+    document.execCommand('copy');
+    e.target.textContent = '복사됨';
+    setTimeout(()=>{e.target.textContent='텍스트 복사';}, 1500);
+  });
+
+  return {node, srv, energyRaw: rawEnergy, satfatRaw: rawSatfat, sugarRaw: rawSugar, sodiumRaw: rawSodium, proteinRaw: rawProtein};
+}
+
+/* ===================== 고열량저영양 판정 ===================== */
+function renderHln(blocks){
+  const type = document.getElementById('hlnType').value;
+  const refId = document.getElementById('hlnServingRef').value;
+  const target = blocks.find(b => b.srv.id === refId);
+  if (!target) return;
+
+  const kcal = target.energyRaw;
+  const satfat = target.satfatRaw;
+  const sugar = target.sugarRaw;
+  const protein = target.proteinRaw;
+  const sodium = target.sodiumRaw;
+
+  let hit = false, reasons = [];
+  if (type === 'snack'){
+    if (kcal > 250 && protein < 2){hit=true; reasons.push('1회 섭취참고량당 열량 250kcal 초과 + 단백질 2g 미만');}
+    if (satfat > 4 && protein < 2){hit=true; reasons.push('포화지방 4g 초과 + 단백질 2g 미만');}
+    if (sugar > 17 && protein < 2){hit=true; reasons.push('당류 17g 초과 + 단백질 2g 미만');}
+    if (!hit && (kcal > 500 || satfat > 8 || sugar > 34)){hit=true; reasons.push('열량 500kcal 초과 또는 포화지방 8g 초과 또는 당류 34g 초과');}
+  } else {
+    if (kcal > 500 && protein < 9){hit=true; reasons.push('열량 500kcal 초과 + 단백질 9g 미만');}
+    if (kcal > 500 && sodium > 600){hit=true; reasons.push('열량 500kcal 초과 + 나트륨 600mg 초과');}
+    if (satfat > 4 && protein < 9){hit=true; reasons.push('포화지방 4g 초과 + 단백질 9g 미만');}
+    if (satfat > 4 && sodium > 600){hit=true; reasons.push('포화지방 4g 초과 + 나트륨 600mg 초과');}
+    if (!hit && (kcal > 1000 || satfat > 8)){hit=true; reasons.push('열량 1000kcal 초과 또는 포화지방 8g 초과');}
+  }
+
+  const box = document.createElement('div');
+  box.className = 'hln-box' + (hit ? '' : ' ok');
+  box.innerHTML = hit
+    ? `<b>⚠ 고열량·저영양식품 기준 해당 가능 (판정 기준: ${target.srv.name})</b>${reasons.map(r=>'· '+r).join('<br>')}<br>「어린이 식생활안전관리 특별법」에 따른 표시·광고 제한 대상 여부를 담당자가 최종 확인하세요.`
+    : `<b>고열량·저영양식품 기준 미해당 (판정 기준: ${target.srv.name})</b>위 기준값으로는 고열량·저영양식품 기준에 해당하지 않습니다. (30g 미만 환산 규정 등 예외는 별도 확인 필요)`;
+  document.getElementById('results').appendChild(box);
+}
+
+/* ===================== PWA: 서비스워커 등록 + 설치 프롬프트 ===================== */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{ /* 오프라인/미지원 환경은 무시 */ });
+  });
+}
+let deferredInstallPrompt = null;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  installBtn.style.display = 'inline-block';
+});
+installBtn.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  installBtn.style.display = 'none';
+});
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+});
+</script>
+</body>
+</html>
