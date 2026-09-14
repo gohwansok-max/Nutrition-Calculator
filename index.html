@@ -18,6 +18,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 :root{
   --ink:#173B4A;
@@ -281,6 +282,10 @@ header.app-header{
   cursor:pointer;
 }
 .btn-line:hover{border-color:var(--teal);color:var(--teal-dark);}
+.btn-line.btn-highlight{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:600;}
+.btn-line.btn-highlight:hover{background:var(--teal-dark);color:#fff;}
+.toast-msg{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(23,59,74,0.92);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:10000;box-shadow:0 4px 14px rgba(0,0,0,0.25);animation:toastFade 0.25s ease-out;}
+@keyframes toastFade{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
 
 /* ---------- 접기 ---------- */
 details.adv{
@@ -691,6 +696,23 @@ footer{
     <div class="field-row" id="calOverrideRow" style="display:none;margin-top:10px;">
       <div class="field"><label>열량 <span class="unit-tag">kcal</span></label><input type="number" id="in_cal" step="any" placeholder="0"></div>
     </div>
+
+    <!-- 대체감미료 / 식이섬유 열량 자동 보정 (식품등의 표시기준 고시 반영) -->
+    <details class="adv" id="altSugarDetails" style="margin-top:12px;background:#F2F7F6;border:1px solid #D0DFDC;border-radius:8px;padding:10px 14px;">
+      <summary style="color:var(--teal-dark);font-weight:700;">💡 제로/저당 대체감미료 및 식이섬유 열량 자동 보정 (클릭)</summary>
+      <div class="adv-body" style="margin-top:10px;">
+        <div class="sub" style="margin-bottom:10px;font-size:12px;color:var(--ink-soft);line-height:1.5;">
+          「식품등의 표시기준」 고시 열량 계수: 알룰로오스·에리스리톨 0 kcal/g, 타가토스 1.5 kcal/g, 기타 당알코올(말티톨·자일리톨 등) 2.4 kcal/g, 식이섬유 2 kcal/g.<br>
+          * 탄수화물 중 해당 성분 함량을 아래에 입력하시면 법정 감면 열량을 정밀 계산하여 '열량 직접 입력'에 자동 반영합니다.
+        </div>
+        <div class="field-row" style="grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;">
+          <div class="field"><label style="font-size:12px;">알룰로오스·에리스리톨 (0kcal)</label><input type="number" id="in_alt_zero" step="any" placeholder="0"></div>
+          <div class="field"><label style="font-size:12px;">기타 당알코올 (2.4kcal)</label><input type="number" id="in_alt_polyol" step="any" placeholder="0"></div>
+          <div class="field"><label style="font-size:12px;">식이섬유 (2kcal)</label><input type="number" id="in_alt_fiber" step="any" placeholder="0"></div>
+        </div>
+        <button type="button" class="btn-line btn-highlight" id="applyAltCalBtn" style="margin-top:10px;width:100%;font-size:13px;">✓ 보정된 열량 계산하여 열량값 자동 적용하기</button>
+      </div>
+    </details>
   </div>
 
   <!-- 2. 표시 단위 -->
@@ -1071,8 +1093,10 @@ function buildBlock(productName, analysis, calOverride, calBase100, srv){
     <div class="result-head">
       <h3>${productName} — ${srv.name}</h3>
       <div class="actions">
+        <button class="btn-line btn-highlight" type="button" data-action="download-image" title="영양정보 서식 박스를 고화질 PNG 이미지로 다운로드">🖼️ 이미지 저장(PNG)</button>
+        <button class="btn-line" type="button" data-action="copy-table" title="엑셀이나 한글 표에 바로 붙여넣기">📊 엑셀/표 복사</button>
+        <button class="btn-line" type="button" data-action="copy" title="텍스트 형태로 복사">📋 텍스트 복사</button>
         <button class="btn-line" type="button" data-action="print">인쇄/PDF</button>
-        <button class="btn-line" type="button" data-action="copy">텍스트 복사</button>
       </div>
     </div>
     <div class="result-flex">
@@ -1095,7 +1119,10 @@ ${servingHeader.replace('<br>', ' / ').replace(/<[^>]+>/g,'')}
 단백질 ${protein.text}g (${dv.protein}%)
 * 1일 영양성분 기준치에 대한 비율(%)은 2,000kcal 기준`;
 
+  // 1. 인쇄/PDF
   node.querySelector('[data-action="print"]').addEventListener('click', ()=>window.print());
+
+  // 2. 텍스트 복사
   node.querySelector('[data-action="copy"]').addEventListener('click', async (e)=>{
     const ta = node.querySelector('.copy-textarea');
     ta.value = copyText;
@@ -1115,7 +1142,73 @@ ${servingHeader.replace('<br>', ' / ').replace(/<[^>]+>/g,'')}
       } catch (err) {}
     }
     e.target.textContent = '복사됨';
-    setTimeout(()=>{e.target.textContent='텍스트 복사';}, 1500);
+    showToast('📋 텍스트가 클립보드에 복사되었습니다.');
+    setTimeout(()=>{e.target.textContent='📋 텍스트 복사';}, 1500);
+  });
+
+  // 3. 엑셀/스프레드시트 표 복사 (TSV)
+  node.querySelector('[data-action="copy-table"]').addEventListener('click', async (e)=>{
+    const tsvData = [
+      ['영양성분', '함량', '1일 영양성분 기준치 비율(%DV)'],
+      ['열량', `${energy.text} kcal`, '-'],
+      ['나트륨', `${sodium.text} mg`, `${dv.sodium}%`],
+      ['탄수화물', `${carb.text} g`, `${dv.carb}%`],
+      ['  당류', `${sugar.text} g`, `${dv.sugar}%`],
+      ['지방', `${fat.text} g`, `${dv.fat}%`],
+      ['  트랜스지방', `${trans.text} g`, '-'],
+      ['  포화지방', `${satfat.text} g`, `${dv.satfat}%`],
+      ['콜레스테롤', `${chol.text} mg`, `${dv.chol}%`],
+      ['단백질', `${protein.text} g`, `${dv.protein}%`]
+    ].map(row => row.join('\t')).join('\n');
+
+    let copied = false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(tsvData);
+        copied = true;
+      } catch (err) {}
+    }
+    e.target.textContent = '복사 완료!';
+    showToast('📊 엑셀/스프레드시트에 붙여넣을 수 있는 표가 복사되었습니다.');
+    setTimeout(()=>{e.target.textContent='📊 엑셀/표 복사';}, 1500);
+  });
+
+  // 4. 고화질 PNG 이미지 저장 (html2canvas)
+  const imgBtn = node.querySelector('[data-action="download-image"]');
+  imgBtn.addEventListener('click', async ()=>{
+    if (typeof html2canvas === 'undefined') {
+      alert('이미지 캡처 모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    const labelBox = node.querySelector('.label-box');
+    const origText = imgBtn.textContent;
+    imgBtn.textContent = '생성 중...';
+    imgBtn.disabled = true;
+    try {
+      const canvas = await html2canvas(labelBox, {
+        scale: 3, // 초고화질 300DPI급
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+      });
+      const link = document.createElement('a');
+      const safeProd = productName.replace(/[\\/:*?"<>|]/g, '_');
+      const safeSrv = srv.name.replace(/[\\/:*?"<>|]/g, '_');
+      link.download = `${safeProd}_${safeSrv}_영양성분표.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      imgBtn.textContent = '저장 완료!';
+      showToast('🖼️ 영양성분표 고화질 이미지가 다운로드되었습니다.');
+    } catch (err) {
+      console.error(err);
+      alert('이미지 저장 중 오류가 발생했습니다: ' + err.message);
+      imgBtn.textContent = origText;
+    } finally {
+      setTimeout(()=>{
+        imgBtn.textContent = origText;
+        imgBtn.disabled = false;
+      }, 2000);
+    }
   });
 
   return {node, srv, energyRaw: rawEnergy, satfatRaw: rawSatfat, sugarRaw: rawSugar, sodiumRaw: rawSodium, proteinRaw: rawProtein};
@@ -1285,6 +1378,44 @@ window.addEventListener('appinstalled', () => {
   if (pwaBottomBanner) pwaBottomBanner.style.display = 'none';
   deferredInstallPrompt = null;
 });
+
+/* ===================== 토스트 알림 및 대체당 열량 보정 ===================== */
+function showToast(msg) {
+  const existing = document.querySelector('.toast-msg');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast-msg';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.remove(); }, 2500);
+}
+
+const altBtn = document.getElementById('applyAltCalBtn');
+if (altBtn) {
+  altBtn.addEventListener('click', () => {
+    const carb = getNum('in_carb');
+    const fat = getNum('in_fat');
+    const protein = getNum('in_protein');
+    const zeroSugar = getNum('in_alt_zero');
+    const polyol = getNum('in_alt_polyol');
+    const fiber = getNum('in_alt_fiber');
+
+    if (carb === 0 && fat === 0 && protein === 0) {
+      alert('먼저 상단의 탄수화물, 지방, 단백질 값을 입력해 주세요.');
+      return;
+    }
+
+    // 일반 탄수화물 = 총 탄수화물 - (알룰로오스·에리스리톨 + 기타당알콜 + 식이섬유)
+    const normalCarb = Math.max(0, carb - (zeroSugar + polyol + fiber));
+    const altKcal = (normalCarb * 4) + (zeroSugar * 0) + (polyol * 2.4) + (fiber * 2) + (fat * 9) + (protein * 4);
+    const roundedAltKcal = Math.round(altKcal * 10) / 10;
+
+    document.getElementById('calOverrideChk').checked = true;
+    document.getElementById('calOverrideRow').style.display = 'flex';
+    document.getElementById('in_cal').value = roundedAltKcal;
+    showToast(`💡 대체당·식이섬유 보정 열량(${roundedAltKcal} kcal)이 자동 적용되었습니다.`);
+  });
+}
 </script>
 
 <!-- PWA 설치 안내 모달 -->
