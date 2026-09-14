@@ -747,6 +747,44 @@ footer{
     </details>
   </div>
 
+  <!-- 4. 알레르기 유발물질 22종 감지 & 혼유 주의문구 생성기 -->
+  <div class="card">
+    <details class="adv" id="allergyDetails">
+      <summary style="color:var(--teal-dark);font-weight:700;">🥜 알레르기 유발물질 22종 감지 & 혼유 주의문구 생성기 (클릭)</summary>
+      <div class="adv-body" style="margin-top:12px;">
+        <div class="sub" style="margin-bottom:12px;font-size:12px;color:var(--ink-soft);line-height:1.5;">
+          원재료 텍스트를 입력하시거나 체크하시면, <b>표시사항용 함유 문구</b>와 <b>제조시설 혼유 주의문구</b>를 법정 고시 기준에 맞추어 즉시 자동 생성합니다.
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:12.5px;font-weight:700;">원재료 텍스트 자동 분석 (원재료명을 붙여넣으세요)</label>
+          <input type="text" id="allergyRawInput" placeholder="예: 정제수, 백설탕, 탈지분유(우유), 대두레시틴, 밀가루, 계란 등" style="width:100%;">
+        </div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;">또는 22종 직접 체크:</div>
+        <div id="allergyChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+
+        <!-- 결과 표시 영역 -->
+        <div style="background:#F2F7F6;border:1px solid #D0DFDC;border-radius:8px;padding:12px;">
+          <div style="margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--teal-dark);margin-bottom:4px;">1) 알레르기 함유 표시 문구</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="allergyInText" readonly style="flex:1;background:#fff;font-size:12.5px;font-weight:600;color:var(--ink);" value="함유된 알레르기 유발물질 없음">
+              <button type="button" class="btn-line" id="copyAllergyInBtn" style="white-space:nowrap;padding:7px 12px;">복사</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal-dark);margin-bottom:4px;">2) 제조시설 혼유 주의문구 (미함유 물질 기준 자동 산출)</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <textarea id="allergyCrossText" readonly style="flex:1;height:56px;background:#fff;font-size:11.5px;line-height:1.45;color:var(--ink);resize:none;padding:6px 8px;border:1px solid var(--line);border-radius:6px;"></textarea>
+              <button type="button" class="btn-line" id="copyAllergyCrossBtn" style="white-space:nowrap;padding:7px 12px;height:56px;">복사</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+
   <button class="btn-primary" id="calcBtn" type="button">표시사항 계산하기</button>
 
   <div id="results" style="margin-top:22px;"></div>
@@ -1414,6 +1452,106 @@ if (altBtn) {
     document.getElementById('calOverrideRow').style.display = 'flex';
     document.getElementById('in_cal').value = roundedAltKcal;
     showToast(`💡 대체당·식이섬유 보정 열량(${roundedAltKcal} kcal)이 자동 적용되었습니다.`);
+  });
+/* ===================== 알레르기 유발물질 22종 감지 및 혼유문구 ===================== */
+const ALLERGY_MAP = [
+  { name: '알류(가금류)', keywords: ['계란', '달걀', '난백', '난황', '전란', '알류', '메추리알'] },
+  { name: '우유', keywords: ['우유', '원유', '탈지분유', '전지분유', '유청', '버터', '치즈', '연유', '유크림'] },
+  { name: '메밀', keywords: ['메밀'] },
+  { name: '땅콩', keywords: ['땅콩', '피넛'] },
+  { name: '대두', keywords: ['대두', '콩', '소이', '두부', '대두유', '레시틴'] },
+  { name: '밀', keywords: ['밀', '소맥', '밀가루', '글루텐'] },
+  { name: '고등어', keywords: ['고등어'] },
+  { name: '게', keywords: ['게', '꽃게', '대게', '홍게'] },
+  { name: '새우', keywords: ['새우'] },
+  { name: '돼지고기', keywords: ['돼지고기', '돈육', '돼지', '포크', '돈지', '베이컨', '햄'] },
+  { name: '복숭아', keywords: ['복숭아'] },
+  { name: '토마토', keywords: ['토마토'] },
+  { name: '아황산류', keywords: ['아황산', '이산화황', '메타중아황산'] },
+  { name: '호두', keywords: ['호두', '월넛'] },
+  { name: '닭고기', keywords: ['닭고기', '계육', '닭'] },
+  { name: '쇠고기', keywords: ['쇠고기', '소고기', '우육', '우지'] },
+  { name: '오징어', keywords: ['오징어'] },
+  { name: '조개류(굴 포함)', keywords: ['조개', '굴', '전복', '홍합', '바지락', '가리비', '꼬막'] },
+  { name: '잣', keywords: ['잣'] }
+];
+
+const selectedAllergies = new Set();
+const chipsContainer = document.getElementById('allergyChips');
+
+function updateAllergyOutputs() {
+  const inTextEl = document.getElementById('allergyInText');
+  const crossTextEl = document.getElementById('allergyCrossText');
+
+  if (selectedAllergies.size === 0) {
+    inTextEl.value = '함유된 알레르기 유발물질 없음';
+    crossTextEl.value = `이 제품은 알류, 우유, 메밀, 땅콩, 대두, 밀, 고등어, 게, 새우, 돼지고기, 복숭아, 토마토, 아황산류, 호두, 닭고기, 쇠고기, 오징어, 조개류(굴, 전복, 홍합 포함), 잣을 사용한 제품과 같은 제조 시설에서 제조하고 있습니다.`;
+    return;
+  }
+
+  const selectedArr = Array.from(selectedAllergies);
+  inTextEl.value = `이 제품은 ${selectedArr.join(', ')}을(를) 함유하고 있습니다.`;
+
+  const unselectedArr = ALLERGY_MAP.map(a => a.name).filter(n => !selectedAllergies.has(n));
+  if (unselectedArr.length > 0) {
+    crossTextEl.value = `이 제품은 ${unselectedArr.join(', ')}을(를) 사용한 제품과 같은 제조 시설에서 제조하고 있습니다.`;
+  } else {
+    crossTextEl.value = '모든 법정 알레르기 유발물질이 포함되어 있어 추가 혼유 주의문구가 필요하지 않습니다.';
+  }
+}
+
+if (chipsContainer) {
+  ALLERGY_MAP.forEach(a => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-line';
+    btn.textContent = a.name;
+    btn.style.padding = '5px 10px';
+    btn.style.fontSize = '12px';
+    btn.addEventListener('click', () => {
+      if (selectedAllergies.has(a.name)) {
+        selectedAllergies.delete(a.name);
+        btn.classList.remove('btn-highlight');
+      } else {
+        selectedAllergies.add(a.name);
+        btn.classList.add('btn-highlight');
+      }
+      updateAllergyOutputs();
+    });
+    chipsContainer.appendChild(btn);
+  });
+
+  const rawIn = document.getElementById('allergyRawInput');
+  rawIn.addEventListener('input', () => {
+    const val = rawIn.value.toLowerCase();
+    const buttons = chipsContainer.querySelectorAll('button');
+    ALLERGY_MAP.forEach((a, idx) => {
+      const match = a.keywords.some(k => val.includes(k));
+      if (match) {
+        selectedAllergies.add(a.name);
+        buttons[idx].classList.add('btn-highlight');
+      }
+    });
+    updateAllergyOutputs();
+  });
+
+  updateAllergyOutputs();
+
+  // 복사 버튼
+  document.getElementById('copyAllergyInBtn').addEventListener('click', async () => {
+    const text = document.getElementById('allergyInText').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    }
+    showToast('📋 알레르기 함유 문구가 복사되었습니다.');
+  });
+
+  document.getElementById('copyAllergyCrossBtn').addEventListener('click', async () => {
+    const text = document.getElementById('allergyCrossText').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    }
+    showToast('📋 혼유 주의문구가 복사되었습니다.');
   });
 }
 </script>
